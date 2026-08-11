@@ -2,7 +2,7 @@
  * Responsibility: Adapts the OpenAI Responses API to Bookly's typed intent contract.
  * Boundary: Model output is untrusted routing data and never authorizes a tool call.
  */
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import {

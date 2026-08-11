@@ -2,7 +2,7 @@
  * Responsibility: Uses OpenAI to rephrase only the FAQ passages supplied by retrieval.
  * Boundary: It proposes text and citations; the workflow independently verifies both.
  */
-import OpenAI from "openai";
+import { OpenAI } from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import type {
