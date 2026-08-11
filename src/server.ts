@@ -1,3 +1,8 @@
+/**
+ * Responsibility: compose the Bookly agent and expose its small HTTP surface.
+ * Boundary: routes validate transport input and sanitize errors; workflows own
+ * customer-support decisions and the static client owns presentation only.
+ */
 import { fileURLToPath } from "node:url";
 import express, {
   type Express,
@@ -36,6 +41,8 @@ export interface AppOptions {
 
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
+  // Injection keeps HTTP tests on the real route surface without booting a
+  // second production composition or reaching an external model provider.
   const agent = options.agent ?? createConfiguredAgent();
 
   app.disable("x-powered-by");
@@ -84,12 +91,16 @@ export function createApp(options: AppOptions = {}): Express {
     response.status(204).send();
   });
 
+  // Static files follow the explicit API routes so a matching asset can never
+  // shadow a support operation.
   app.use(express.static(publicDirectory));
 
   app.use("/api", (_request, response) => {
     response.status(404).json({ error: "API route not found." });
   });
 
+  // Express parse errors occur before route handlers. Keeping this middleware
+  // last guarantees malformed input receives JSON without a stack or file path.
   app.use(
     (
       error: unknown,
@@ -138,6 +149,8 @@ function createConfiguredAgent(): BooklyAgent {
     new DeterministicKnowledgeAnswerer();
 
   if (config.mode === "openai") {
+    // Mode is selected once at startup. Provider failures remain visible and
+    // fail safely rather than silently changing the routing semantics mid-turn.
     router = new OpenAIIntentRouter(
       config.openaiApiKey as string,
       config.openaiModel,

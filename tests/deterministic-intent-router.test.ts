@@ -1,3 +1,6 @@
+// Responsibility: Verify offline intent, slot, and context-action extraction for supported customer language.
+// Boundary: Routing is pure here; session orchestration and operational tool effects are tested elsewhere.
+
 import { describe, expect, it } from "vitest";
 import { DeterministicIntentRouter } from "../src/agent/deterministic-intent-router.js";
 import { normalizeOrderId } from "../src/agent/slot-normalization.js";
@@ -59,12 +62,22 @@ describe("DeterministicIntentRouter", () => {
     "How long does shipping to Canada take?",
     "What is Bookly's return policy?",
     "What is Bookly's refund policy?",
+    "whats the return window",
   ])("keeps an informational policy question in the FAQ path: %s", async (message) => {
     const result = await route(message);
 
       expect(result.intent).toBe("faq");
       expect(result.contextAction).toBe("continue");
     });
+
+  it("keeps an order-specific return-window question in the return workflow", async () => {
+    const result = await route("Can I return BK-10422 within the return window?");
+
+    expect(result).toMatchObject({
+      intent: "return_request",
+      slots: { orderId: "BK-10422" },
+    });
+  });
 
   it("treats a new refund request as a return workflow", async () => {
     const result = await route("I want a refund for BK-10422.");

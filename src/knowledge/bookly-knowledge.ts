@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Defines the approved facts and retrieval terms for Bookly FAQs.
+ * Boundary: This is evidence only; routing and answer generation live elsewhere.
+ */
 export interface KnowledgePassage {
   readonly id: string;
   readonly title: string;
@@ -25,6 +29,10 @@ export const BOOKLY_KNOWLEDGE = [
       "Canadian",
       "shipping time",
       "shipping times",
+      "delivery time",
+      "delivery times",
+      "shipping cost",
+      "delivery cost",
       "shipping policy",
       "international shipping",
     ],
@@ -36,6 +44,7 @@ export const BOOKLY_KNOWLEDGE = [
       "Most delivered Bookly orders can be returned within 30 days of delivery. Final-sale items are not eligible, and Bookly verifies the order before creating a return.",
     keywords: [
       "return policy",
+      "return window",
       "return",
       "returns",
       "30 days",

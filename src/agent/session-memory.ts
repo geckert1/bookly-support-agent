@@ -1,3 +1,6 @@
+// Responsibility: Retain validated structured workflow state for each demo session.
+// Boundary: Memory is process-local and intentionally stores no raw conversation transcript.
+
 import {
   SessionStateSchema,
   type SessionState,

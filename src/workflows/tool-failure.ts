@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Converts tool failures into stable traces and customer-safe replies.
+ * Boundary: Raw provider details stop here and never enter response copy.
+ */
 import type { TraceEvent } from "../domain/agent.js";
 import {
   isBooklyToolError,
@@ -10,6 +14,8 @@ export function toolFailureResult(
   error: unknown,
   trace: TraceEvent[],
 ): WorkflowResult {
+  // Unknown exceptions intentionally collapse to one safe code. Leaking raw
+  // errors could expose fixture identities, provider details, or stack context.
   const code: ToolErrorCode | "unexpected" = isBooklyToolError(error)
     ? error.code
     : "unexpected";

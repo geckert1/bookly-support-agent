@@ -1,3 +1,6 @@
+// Responsibility: Exercise Bookly's orchestration across routing, memory, workflows, guardrails, and tools.
+// Boundary: Uses deterministic or stubbed collaborators; HTTP, browser UI, and real provider calls stay out of scope.
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BooklyAgent } from "../src/agent/bookly-agent.js";
 import { DeterministicIntentRouter } from "../src/agent/deterministic-intent-router.js";
@@ -23,6 +26,8 @@ afterEach(() => {
 });
 
 describe("BooklyAgent", () => {
+  // --- FAQ grounding and safe topic changes ---
+
   it.each([
     "Can you recommend a mystery novel?",
     "Do you offer membership in Canada?",
@@ -94,6 +99,7 @@ describe("BooklyAgent", () => {
     expect(createReturn).not.toHaveBeenCalled();
   });
 
+  // Grounded prose is safe only when every citation points to a passage the answerer received.
   it("never displays an FAQ answer with an invalid citation", async () => {
     const tools = new MockBooklyTools();
     const agent = new BooklyAgent(
@@ -138,6 +144,8 @@ describe("BooklyAgent", () => {
     expect(staleYes.status).not.toBe("needs_confirmation");
     expect(createReturn).not.toHaveBeenCalled();
   });
+
+  // --- Required fields, session memory, and verified context reuse ---
 
   it("clarifies missing order-status fields and resolves BK-10421", async () => {
     const { agent } = createHarness();
@@ -380,6 +388,8 @@ describe("BooklyAgent", () => {
     },
   );
 
+  // --- Return write path: eligibility, confirmation, and stale-input guards ---
+
   it("collects return fields and creates exactly one return only after confirmation", async () => {
     const { agent, tools } = createHarness();
     const createReturn = vi.spyOn(tools, "createReturn");
@@ -432,6 +442,7 @@ describe("BooklyAgent", () => {
     });
   });
 
+  // Structured provider output is a hint; customer-authored evidence must win before a write is staged.
   it("asks for a reason when the model proposes one the customer never supplied", async () => {
     const client: IntentResponsesParseClient = {
       responses: {
@@ -666,6 +677,8 @@ describe("BooklyAgent", () => {
     expect(createReturn).not.toHaveBeenCalled();
   });
 
+  // --- Failure repair and completed-workflow boundaries ---
+
   it("does not repeat a completed workflow for an unrelated message", async () => {
     const { agent, tools } = createHarness();
     const lookupOrder = vi.spyOn(tools, "lookupOrder");
@@ -734,6 +747,7 @@ describe("BooklyAgent", () => {
     });
   });
 
+  // Confirmation is resolved before routing so a provider outage cannot weaken the final write gate.
   it("completes an exact pending confirmation without another router call", async () => {
     const tools = new MockBooklyTools();
     const deterministicRouter = new DeterministicIntentRouter();
@@ -908,6 +922,8 @@ describe("BooklyAgent", () => {
     expect(nextTurn.message).not.toMatch(/clear yes or no/i);
   });
 
+  // --- Post-return aftercare and specialist handoff ---
+
   it("hands off a missing-label follow-up without replaying the completed return", async () => {
     const { agent, tools } = createHarness();
     const lookupOrder = vi.spyOn(tools, "lookupOrder");
@@ -1067,6 +1083,7 @@ describe("BooklyAgent", () => {
     expect(createReturn).toHaveBeenCalledTimes(1);
   });
 
+  // A router may request reuse, but only completed lookup evidence can establish trusted context.
   it("rejects a router hint to reuse context without a verified completed lookup", async () => {
     const tools = new MockBooklyTools();
     const agent = new BooklyAgent(
@@ -1161,6 +1178,8 @@ describe("BooklyAgent", () => {
     expect(lookupOrder).toHaveBeenCalledTimes(1);
     expect(createReturn).toHaveBeenCalledTimes(1);
   });
+
+  // --- Fresh workflows and identity isolation after completion ---
 
   it("starts a genuinely new return without reusing completed-return fields", async () => {
     const { agent, tools } = createHarness();
@@ -1353,6 +1372,7 @@ describe("BooklyAgent", () => {
     );
   });
 
+  // Privacy ordering matters: clear conflicting context before considering an outage fallback.
   it.each([
     [
       "customer",

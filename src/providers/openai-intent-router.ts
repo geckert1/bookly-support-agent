@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Adapts the OpenAI Responses API to Bookly's typed intent contract.
+ * Boundary: Model output is untrusted routing data and never authorizes a tool call.
+ */
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
@@ -171,6 +175,8 @@ function createResponsesParseClient(apiKey: string): IntentResponsesParseClient 
   return {
     responses: {
       parse: async (request) => {
+        // The cast is isolated at the SDK edge so the rest of the application
+        // and every injected test double keep a small, explicit contract.
         const response = await openai.responses.parse(request as never);
         return { output_parsed: response.output_parsed };
       },

@@ -1,3 +1,6 @@
+// Responsibility: Close unsupported or post-return requests with safe customer guidance.
+// Boundary: Handoff responses preserve references but never call transactional tools.
+
 import type {
   AgentReplyStatus,
   SessionState,
@@ -79,15 +82,11 @@ export function explainHandoff(
   reason: "existing_return" | "general",
   trace: TraceEvent[],
 ): HandoffResult {
-  session.pendingReturn = undefined;
-  session.phase = "completed";
-  trace.push({
-    category: "guardrail",
-    name: "human_handoff",
-    status: "blocked",
-    detail:
-      "Stopped self-service because the request requires a support specialist; no action was taken.",
-  });
+  closeForHandoff(
+    session,
+    trace,
+    "Stopped self-service because the request requires a support specialist; no action was taken.",
+  );
 
   if (reason === "existing_return" && session.completedReturn) {
     const { orderId, returnId } = session.completedReturn;
@@ -108,15 +107,11 @@ export function explainKnowledgeHandoff(
   session: SessionState,
   trace: TraceEvent[],
 ): HandoffResult {
-  session.pendingReturn = undefined;
-  session.phase = "completed";
-  trace.push({
-    category: "guardrail",
-    name: "human_handoff",
-    status: "blocked",
-    detail:
-      "Stopped the FAQ path because approved Bookly knowledge did not support a grounded answer.",
-  });
+  closeForHandoff(
+    session,
+    trace,
+    "Stopped the FAQ path because approved Bookly knowledge did not support a grounded answer.",
+  );
 
   return {
     message:
@@ -144,4 +139,21 @@ export function explainNoPendingAction(
     message: `There is no pending action to confirm, so I didn't create or change anything.${reference} Please contact a Bookly support specialist if you need help beyond order status or a new return.`,
     status: "resolved",
   };
+}
+
+function closeForHandoff(
+  session: SessionState,
+  trace: TraceEvent[],
+  detail: string,
+): void {
+  // Closing the staged write before adding the trace makes every handoff path
+  // terminal even if a caller later changes its customer-facing copy.
+  session.pendingReturn = undefined;
+  session.phase = "completed";
+  trace.push({
+    category: "guardrail",
+    name: "human_handoff",
+    status: "blocked",
+    detail,
+  });
 }

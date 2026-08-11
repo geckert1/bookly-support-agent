@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Retrieves, generates, and validates read-only FAQ answers.
+ * Boundary: It cannot call transactional tools and fails closed when evidence is missing.
+ */
 import type { TraceEvent } from "../domain/agent.js";
 import type { KnowledgePassage } from "../knowledge/bookly-knowledge.js";
 import type {
@@ -82,6 +86,8 @@ export async function runFaqWorkflow(
     return { outcome: "handoff", reason: "grounding_failed" };
   }
 
+  // Provider schemas prove only that citations are strings. Membership is
+  // checked here so a plausible but unretrieved source can never reach the user.
   const grounded = validateGrounding(proposedAnswer, passages);
   if (!grounded) {
     addTrace(input.trace, {

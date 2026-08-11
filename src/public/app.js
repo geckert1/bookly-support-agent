@@ -1,3 +1,6 @@
+// Responsibility: render the chat, trace, and simulated specialist handoff.
+// Boundary: this browser code displays API results; it owns no business policy
+// and the support button intentionally makes no external help-desk request.
 (() => {
   "use strict";
 
@@ -29,6 +32,7 @@
     composerStatus: document.querySelector("#composer-status"),
     modeBadge: document.querySelector("#mode-badge"),
     modeLabel: document.querySelector("#mode-label"),
+    traceContent: document.querySelector("#trace-content"),
     traceEmpty: document.querySelector("#trace-empty"),
     traceList: document.querySelector("#trace-list")
   };
@@ -37,6 +41,8 @@
   let isBusy = false;
   let supportRequested = false;
 
+  // A per-tab ID preserves multi-turn context without putting customer details
+  // in browser storage. Reset rotates it so the next transcript is isolated.
   function createSessionId() {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       return crypto.randomUUID();
@@ -118,6 +124,8 @@
   function requestSupportSpecialist() {
     if (isBusy || supportRequested) return;
 
+    // This is intentionally honest demo behavior: the button changes local UI
+    // state only and never implies that a real help-desk ticket was created.
     supportRequested = true;
     document.querySelectorAll(".support-action-button").forEach((button) => {
       button.disabled = true;
@@ -172,12 +180,19 @@
   function setBusy(busy, statusText = "Ready") {
     isBusy = busy;
     elements.input.disabled = busy;
-    elements.sendButton.disabled = busy;
     elements.resetButton.disabled = busy;
     elements.promptButtons.forEach((button) => {
       button.disabled = busy;
     });
+    elements.form.setAttribute("aria-busy", String(busy));
     elements.composerStatus.textContent = statusText;
+    updateComposerAvailability();
+  }
+
+  // Keeping one source of truth prevents an empty composer from looking
+  // actionable after a request, reset, or failed response re-enables the UI.
+  function updateComposerAvailability() {
+    elements.sendButton.disabled = isBusy || !elements.input.value.trim();
   }
 
   function autoSizeComposer() {
@@ -217,6 +232,8 @@
       try {
         body = JSON.parse(rawBody);
       } catch {
+        // An unreadable success response is a broken API contract; an unreadable
+        // error response is replaced below with a safe status-based message.
         if (response.ok) throw new Error("The server returned an unreadable response.");
       }
     }
@@ -242,6 +259,8 @@
     const rootFields = approvedFields(trace);
     if (rootFields.length) events.push(trace);
 
+    // Tolerating these three envelopes keeps the presentation adapter small;
+    // approvedFields still enforces the same privacy allowlist for every shape.
     for (const key of ["events", "steps", "operations"]) {
       if (Array.isArray(trace[key])) events.push(...trace[key]);
     }
@@ -298,8 +317,9 @@
     if (/success|succeeded|complete|completed|ok|ready|available/.test(value)) {
       return "trace-status--success";
     }
-    if (/warn|pending|running|started|retry|blocked/.test(value)) return "trace-status--warning";
-    if (/error|fail|failed|timeout|unavailable/.test(value)) return "trace-status--error";
+    if (/blocked|error|fail|failed|timeout|unavailable/.test(value)) {
+      return "trace-status--blocked";
+    }
     return "";
   }
 
@@ -361,6 +381,12 @@
 
     elements.traceList.replaceChildren(...safeItems);
     elements.traceEmpty.hidden = safeItems.length > 0;
+
+    // The newest guardrail should be visible without hiding earlier events;
+    // the focusable region remains scrollable for keyboard review.
+    window.requestAnimationFrame(() => {
+      elements.traceContent.scrollTop = elements.traceContent.scrollHeight;
+    });
   }
 
   async function sendMessage(message) {
@@ -385,6 +411,8 @@
 
       loadingMessage.remove();
       appendMessage("assistant", normalizeReply(data.reply), {
+        // The server's terminal intent is the only entry condition for the
+        // simulated handoff action; matching customer-facing prose is unsafe.
         supportAction: data.reply?.intent === "handoff"
       });
       renderTrace(data.trace ?? data.reply?.trace);
@@ -411,6 +439,8 @@
         method: "POST",
         body: JSON.stringify({ sessionId })
       });
+      // Rotate only after the server confirms its mock state was cleared. This
+      // prevents a failed reset from silently abandoning an active session.
       replaceSessionId();
       supportRequested = false;
       renderWelcome();
@@ -454,6 +484,8 @@
       const health = await requestJson("/api/health");
       updateModeBadge(health);
     } catch {
+      // Health is presentation metadata. Its failure must not erase the chat or
+      // claim that the configured agent changed modes at runtime.
       showOfflineMode();
     }
   }
@@ -463,7 +495,10 @@
     sendMessage(elements.input.value);
   });
 
-  elements.input.addEventListener("input", autoSizeComposer);
+  elements.input.addEventListener("input", () => {
+    autoSizeComposer();
+    updateComposerAvailability();
+  });
   elements.input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
       event.preventDefault();
@@ -485,5 +520,6 @@
   renderWelcome();
   renderTrace(null);
   autoSizeComposer();
+  updateComposerAvailability();
   checkHealth();
 })();

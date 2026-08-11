@@ -1,3 +1,6 @@
+// Responsibility: Define validated return eligibility results and authorization receipts.
+// Boundary: These schemas describe outcomes; policy checks and return creation live in tools.
+
 import { z } from "zod";
 
 export const ReturnEligibilityCodeSchema = z.enum([

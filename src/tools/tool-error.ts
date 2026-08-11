@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Carries stable, typed failure codes out of Bookly tool adapters.
+ * Boundary: Workflows map these codes to customer-safe copy and never expose raw errors.
+ */
 import { z } from "zod";
 
 export const ToolErrorCodeSchema = z.enum([

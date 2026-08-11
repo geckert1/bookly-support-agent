@@ -5,6 +5,7 @@ coverage/
 dist/
 tmp/
 output/*.inspect.ndjson
+output/Bookly_Decagon_SE_Take_Home/
 qa/
 .DS_Store
 .claude/

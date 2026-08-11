@@ -8,11 +8,18 @@ Bookly is a small customer-support agent for an online bookstore. It supports th
 
 ## The thesis
 
-> **Use AI for ambiguity; use code for commitments.**
+> **A great CX agent should understand natural language without letting the model control business actions.**
 
 The language model classifies customer language and extracts details. In the read-only FAQ path, it may also write a response from retrieved Bookly passages. It cannot look up an order, decide return eligibility, approve a return, or call a write tool. Explicit TypeScript workflows own those commitments.
 
 This is intentionally not a general-purpose agent loop or an all-in-one agent framework. The narrow design makes the important behavior easy to explain, test, and trust.
+
+## Deliverables
+
+- The interactive Bookly prototype is in `src/` and runs at `http://localhost:3000`.
+- The editable architecture deck is at [output/Bookly_Decagon_SE_Take_Home.pptx](output/Bookly_Decagon_SE_Take_Home.pptx).
+- The technical tradeoffs are documented in [docs/DECISIONS.md](docs/DECISIONS.md).
+- The exact live-review flow is in [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md).
 
 ## Assignment requirements -> working proof
 
@@ -22,12 +29,12 @@ This is intentionally not a general-purpose agent loop or an all-in-one agent fr
 | Tool use and action | Ask to return `BK-10422`, then explicitly confirm. The agent calls `lookupOrder`, `checkReturnEligibility`, and finally the mocked `createReturn` write. |
 | Clarifying question | Omit an order number, email, return reason, or clear confirmation. The workflow stops and asks only for the missing information. |
 | Direct LLM API calls | The intent router and grounded FAQ answerer call the OpenAI Responses API directly with Zod Structured Outputs and `store: false`. There is no agent platform between Bookly and the API. |
-| General knowledge question | Ask `How long does shipping to Canada take?` The FAQ workflow retrieves approved Bookly knowledge, validates the answer's citations, and hands off instead of guessing when the knowledge base does not support an answer. |
+| General knowledge question | Ask `How long does shipping take?` The FAQ workflow retrieves approved Bookly knowledge, validates the answer's citations, and hands off instead of guessing when the knowledge base does not support an answer. |
 | Depth over breadth | Bookly implements two operational workflows and one small read-only knowledge workflow. Unsupported questions go to a safe specialist handoff. |
 
-## Quickstart
+## Run locally
 
-Follow these steps from top to bottom.
+These are the exact steps a reviewer can follow from a fresh clone.
 
 1. Install Node.js 22.13 or newer and pnpm 11 if they are not already installed.
 
@@ -57,20 +64,28 @@ Follow these steps from top to bottom.
 
    Leave `OPENAI_MODEL=gpt-5.6-luna`, or replace it with a compatible model available to your OpenAI project. Never paste a key into source code.
 
-6. Start Bookly:
+6. Verify the repository before starting the app:
+
+   ```bash
+   pnpm check
+   ```
+
+   This runs TypeScript validation and the full Vitest suite. It does not require an OpenAI key.
+
+7. Start Bookly:
 
    ```bash
    pnpm dev
    ```
 
-7. Wait for one of these lines:
+8. Wait for one of these lines:
 
    ```text
    Bookly is running at http://localhost:3000 in openai mode.
    Bookly is running at http://localhost:3000 in mock mode.
    ```
 
-8. Open [http://localhost:3000](http://localhost:3000) and confirm the mode badge matches your selection.
+9. Open [http://localhost:3000](http://localhost:3000) and confirm the mode badge matches your selection.
 
 `AGENT_MODE=auto` resolves once during startup: it selects OpenAI when a key is present and mock when no key is present. It is not runtime failover. If an OpenAI call fails while the server is running, Bookly fails safely or uses only the narrow documented aftercare fallback. It does not silently switch the whole conversation to mock mode.
 
@@ -88,8 +103,8 @@ Use `maya.chen@example.com` with these deterministic fixtures:
 
 1. **Grounded FAQ answer**
 
-   - Send `How long does shipping to Canada take?`
-   - In OpenAI mode, the model writes the answer from the retrieved `shipping-and-canada` passage. The trace shows retrieval and the `GroundedAnswer` citation guard. In mock mode, Bookly returns the approved passage directly.
+   - Send `How long does shipping take?`
+   - In OpenAI mode, the model writes the answer from the retrieved shipping passage. The trace shows retrieval and the `GroundedAnswer` citation guard. In mock mode, Bookly returns the approved passage directly.
 
 2. **Multi-turn order status**
 

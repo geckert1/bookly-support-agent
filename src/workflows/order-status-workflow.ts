@@ -1,4 +1,9 @@
+/**
+ * Responsibility: Looks up a verified order and formats its read-only status reply.
+ * Boundary: It requires both identity fields and never mutates an order.
+ */
 import type { Order } from "../domain/order.js";
+import { formatUtcDate } from "./format-date.js";
 import { toolFailureResult } from "./tool-failure.js";
 import {
   addTrace,
@@ -80,12 +85,5 @@ function formatOrderStatus(order: Order): string {
 
 function formatDate(value: string | undefined): string {
   if (!value) return "not yet available";
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  const date = new Date(dateOnly ? `${value}T12:00:00.000Z` : value);
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(date);
+  return formatUtcDate(value);
 }

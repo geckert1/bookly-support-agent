@@ -1,3 +1,6 @@
+// Responsibility: Hold deterministic and OpenAI routers to the same intent and slot contract.
+// Boundary: Provider output is stubbed; workflow execution, session mutation, and tool calls stay out of scope.
+
 import { describe, expect, it } from "vitest";
 import { DeterministicIntentRouter } from "../src/agent/deterministic-intent-router.js";
 import type {
@@ -195,6 +198,7 @@ function openAIRouterFor(modelRoute: ConformanceCase["modelRoute"]): IntentRoute
 }
 
 describe("intent-router conformance", () => {
+  // The extraction mechanism may differ, but changing modes must not change the routing contract.
   for (const testCase of CASES) {
     it.each([
       ["deterministic", () => new DeterministicIntentRouter()],

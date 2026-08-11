@@ -1,3 +1,6 @@
+// Responsibility: Verify that the OpenAI answer adapter is grounded in supplied passages and parsed citations.
+// Boundary: The Responses client is mocked; retrieval selection and end-to-end FAQ routing are tested elsewhere.
+
 import { describe, expect, it, vi } from "vitest";
 import { BOOKLY_KNOWLEDGE } from "../src/knowledge/bookly-knowledge.js";
 import {
@@ -7,6 +10,7 @@ import {
 } from "../src/providers/openai-knowledge-answerer.js";
 
 describe("OpenAIKnowledgeAnswerer", () => {
+  // Supplying only retrieved passages makes the later citation check an enforceable boundary.
   it("calls Responses API parsing with only retrieved passages and store disabled", async () => {
     let capturedRequest: KnowledgeParseRequest | undefined;
     const parse = vi.fn(async (request: KnowledgeParseRequest) => {

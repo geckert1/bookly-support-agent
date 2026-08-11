@@ -1,5 +1,10 @@
+/**
+ * Responsibility: Stages an eligible return, confirms it, then performs one guarded write.
+ * Boundary: No return reaches the command tool before explicit customer confirmation.
+ */
 import type { Order } from "../domain/order.js";
 import type { ReturnEligibility } from "../domain/returns.js";
+import { formatUtcDate } from "./format-date.js";
 import { toolFailureResult } from "./tool-failure.js";
 import {
   addTrace,
@@ -147,6 +152,8 @@ async function finishConfirmation(
   });
 
   try {
+    // This literal is emitted only after the explicit-confirmation branch above.
+    // Removing that ordering would turn conversational ambiguity into write access.
     const receipt = await tools.createReturn({
       ...pendingReturn,
       confirmed: true,
@@ -213,10 +220,5 @@ function askFor(
 
 function formatDate(value: string | undefined): string {
   if (!value) return "the end of the return window";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${value}T12:00:00.000Z`));
+  return formatUtcDate(value, true);
 }

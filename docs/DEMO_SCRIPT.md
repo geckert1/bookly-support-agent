@@ -6,7 +6,7 @@
 - In-transit order: `BK-10421`
 - Return-eligible order: `BK-10422`
 - Return-ineligible order: `BK-10423`
-- Grounded FAQ: shipping time to Canada
+- Grounded FAQ: shipping time
 
 ## Demo flow
 
@@ -18,11 +18,11 @@
 
 Enter:
 
-> How long does shipping to Canada take?
+> How long does shipping take?
 
 After the response, point to `KnowledgeRetrieval` and `GroundedAnswer` in the trace:
 
-“This is where the model writes customer-facing text, but it does not answer from memory. Code retrieves the approved Canada passage first. The model sees the question and only that retrieved passage, and the application rejects the answer unless its citations point back to what was retrieved. With no matching passage, Bookly hands off instead of guessing.”
+“This is where the model writes customer-facing text, but it does not answer from memory. Code retrieves an approved shipping passage first. The model sees the question and only that retrieved passage, and the application rejects the answer unless its citations point back to what was retrieved. With no matching passage, Bookly hands off instead of guessing.”
 
 Reset the conversation.
 

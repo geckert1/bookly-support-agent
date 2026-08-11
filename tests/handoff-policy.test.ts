@@ -1,3 +1,6 @@
+// Responsibility: Verify deterministic post-return acknowledgement and specialist-handoff policy decisions.
+// Boundary: Exercises pure policy helpers with session fixtures; no router, tool, or network calls occur.
+
 import { describe, expect, it } from "vitest";
 import {
   explainHandoff,

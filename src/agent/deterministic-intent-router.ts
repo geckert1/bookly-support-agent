@@ -1,3 +1,6 @@
+// Responsibility: Provide credential-free intent and slot routing for local runs and tests.
+// Boundary: Routing proposes typed state; workflows and tools remain authoritative for actions.
+
 import type { SupportIntent, SupportSlots } from "../domain/agent.js";
 import {
   IntentRouterInputSchema,
@@ -11,8 +14,9 @@ import {
   isPositiveReturnAcknowledgementFallback,
 } from "./handoff-policy.js";
 import {
-  extractEmailAddresses,
   extractOrderIds,
+  extractSingleEmailAddress,
+  extractSingleOrderId,
 } from "./slot-normalization.js";
 
 const RETURN_PATTERN = /\b(return|refund|send\s+(?:it\s+)?back)\b/i;
@@ -24,6 +28,7 @@ const DAMAGED_DELIVERY_PATTERN =
   /\b(?:book|item|package)\b.{0,30}\b(?:came|arrived|was delivered)\b.{0,20}\b(?:broken|damaged)\b/i;
 const FAQ_PATTERN =
   /\b(?:shipping (?:time|times|policy)|how long (?:does )?(?:shipping|delivery)|(?:return|refund) policy|(?:reset|forgot(?:ten)?) (?:my )?password|password reset)\b/i;
+const GENERAL_RETURN_WINDOW_PATTERN = /\b(?:return|refund) window\b/i;
 const GENERAL_QUESTION_PATTERN =
   /^(?:what|how|do|does|can|could|is|are|will|when|why)\b|\?\s*$/i;
 const HUMAN_HANDOFF_PATTERN =
@@ -66,7 +71,11 @@ function detectIntent(message: string): SupportIntent {
   }
   // Informational policy questions are read-only FAQ requests, not attempts to
   // start the similarly worded return workflow.
-  if (FAQ_PATTERN.test(message)) {
+  if (
+    FAQ_PATTERN.test(message) ||
+    (GENERAL_RETURN_WINDOW_PATTERN.test(message) &&
+      extractOrderIds(message).length === 0)
+  ) {
     return "faq";
   }
   if (DAMAGED_DELIVERY_PATTERN.test(message)) {
@@ -126,24 +135,14 @@ function chooseContextAction(
 
 function extractSlots(message: string, intent: SupportIntent): SupportSlots {
   const slots: SupportSlots = {};
-  const orderId = extractOrderId(message);
-  const email = extractEmail(message);
+  const orderId = extractSingleOrderId(message);
+  const email = extractSingleEmailAddress(message);
   const returnReason = extractReturnReason(message, intent);
 
   if (orderId) slots.orderId = orderId;
   if (email) slots.email = email;
   if (returnReason) slots.returnReason = returnReason;
   return slots;
-}
-
-function extractOrderId(message: string): string | undefined {
-  const orderIds = extractOrderIds(message);
-  return orderIds.length === 1 ? orderIds[0] : undefined;
-}
-
-function extractEmail(message: string): string | undefined {
-  const emails = extractEmailAddresses(message);
-  return emails.length === 1 ? emails[0] : undefined;
 }
 
 function extractReturnReason(

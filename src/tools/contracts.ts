@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Defines and validates every Bookly tool input and output.
+ * Boundary: Schemas protect the command edge; implementations still enforce policy and identity.
+ */
 import { z } from "zod";
 import { OrderSchema } from "../domain/order.js";
 import {
@@ -34,6 +38,8 @@ export const CreateReturnInputSchema = z.object({
   orderId: OrderIdSchema,
   email: CustomerEmailSchema,
   reason: z.string().trim().min(3).max(300),
+  // A literal true makes confirmation part of the command type, so callers
+  // cannot accidentally omit or soften the write authorization signal.
   confirmed: z.literal(true),
 });
 

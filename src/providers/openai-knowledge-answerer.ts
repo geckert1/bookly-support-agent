@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Uses OpenAI to rephrase only the FAQ passages supplied by retrieval.
+ * Boundary: It proposes text and citations; the workflow independently verifies both.
+ */
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
@@ -50,6 +54,8 @@ export class OpenAIKnowledgeAnswerer implements KnowledgeAnswerer {
   }
 
   async answer(input: KnowledgeAnswerInput): Promise<KnowledgeAnswer> {
+    // Do not call the provider without evidence. An empty model answer gives
+    // the workflow a deterministic fail-closed result instead of inviting recall.
     if (input.passages.length === 0) {
       return { answer: "", citedPassageIds: [] };
     }
@@ -83,6 +89,8 @@ export class OpenAIKnowledgeAnswerer implements KnowledgeAnswerer {
       throw new Error("OpenAI returned no structured knowledge answer.");
     }
 
+    // Structured parsing constrains shape, not truth. Citation membership is
+    // deliberately rechecked by the workflow after this provider returns.
     const parsed = ModelKnowledgeAnswerSchema.parse(response.output_parsed);
     return {
       answer: parsed.answer.trim(),

@@ -1,3 +1,6 @@
+// Responsibility: Provide validated, deterministic Bookly orders for the local tool adapter.
+// Boundary: Fixture data models external records but is not a production persistence layer.
+
 import { OrderSchema, type Order } from "../domain/order.js";
 
 const fixtureOrders = [

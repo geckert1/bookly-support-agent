@@ -1,3 +1,6 @@
+// Responsibility: Validate environment input and expose one resolved runtime configuration.
+// Boundary: Configuration selects adapters but never reads or mutates application state.
+
 import "dotenv/config";
 import { z } from "zod";
 

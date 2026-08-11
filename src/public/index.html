@@ -1,4 +1,8 @@
 <!doctype html>
+<!--
+  Responsibility: provide the accessible, progressively enhanced Bookly shell.
+  Boundary: application behavior and business decisions live in app.js and the server.
+-->
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -98,10 +102,10 @@
               <button
                 type="button"
                 class="prompt-chip"
-                data-prompt="How long does shipping to Canada take?"
+                data-prompt="How long does shipping take?"
               >
                 <span aria-hidden="true">i</span>
-                How long does shipping to Canada take?
+                How long does shipping take?
               </button>
             </div>
           </section>
@@ -118,7 +122,7 @@
                 aria-describedby="composer-help composer-status"
                 required
               ></textarea>
-              <button id="send-button" class="send-button" type="submit" aria-label="Send message">
+              <button id="send-button" class="send-button" type="submit" aria-label="Send message" disabled>
                 <span class="send-label">Send</span>
                 <span class="send-arrow" aria-hidden="true">↑</span>
               </button>
@@ -146,7 +150,13 @@
             A safe view of routing, tools, and guardrails. Private model reasoning is never displayed.
           </p>
 
-          <div id="trace-content" class="trace-content" aria-live="polite">
+          <div
+            id="trace-content"
+            class="trace-content"
+            aria-live="polite"
+            aria-label="Operational trace events. The newest event is shown automatically."
+            tabindex="0"
+          >
             <div id="trace-empty" class="trace-empty">
               <span class="trace-empty-mark" aria-hidden="true">⌁</span>
               <h3>No activity yet</h3>

@@ -1,3 +1,6 @@
+// Responsibility: Define runtime-validated agent state, replies, and trace contracts.
+// Boundary: Domain schemas describe valid data but do not execute routing or workflows.
+
 import { z } from "zod";
 
 export const SupportIntentSchema = z.enum([

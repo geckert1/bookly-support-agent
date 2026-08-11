@@ -1,3 +1,6 @@
+// Responsibility: Define the validated contract shared by language and deterministic routers.
+// Boundary: Router output is a proposal; orchestration still enforces context and write policy.
+
 import { z } from "zod";
 import {
   SessionPhaseSchema,

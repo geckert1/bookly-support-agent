@@ -1,3 +1,6 @@
+// Responsibility: Verify grounded FAQ retrieval, citation checks, and safe fallback behavior.
+// Boundary: Uses controlled knowledge and answerer doubles; intent routing and HTTP delivery stay out of scope.
+
 import { describe, expect, it, vi } from "vitest";
 import type { TraceEvent } from "../src/domain/agent.js";
 import { BOOKLY_KNOWLEDGE } from "../src/knowledge/bookly-knowledge.js";
@@ -10,7 +13,14 @@ import { runFaqWorkflow } from "../src/workflows/faq-workflow.js";
 describe("FAQ workflow", () => {
   it.each([
     ["Do you ship to Canada?", "shipping-and-canada", /Canada/i],
+    [
+      "How long does shipping take?",
+      "shipping-and-canada",
+      /3 to 5 business days/i,
+    ],
+    ["how much is shipping", "shipping-and-canada", /delivery estimate/i],
     ["What is Bookly's return policy?", "return-policy", /30 days/i],
+    ["whats the return window", "return-policy", /30 days/i],
     ["How do I reset my password?", "password-reset", /Forgot password/i],
   ])(
     "answers a grounded FAQ: %s",
@@ -63,6 +73,7 @@ describe("FAQ workflow", () => {
     ]);
   });
 
+  // Retrieval must fail closed before generation, otherwise the answerer can invent policy.
   it("signals handoff without calling the answerer for an out-of-KB question", async () => {
     const answer = vi.fn<KnowledgeAnswerer["answer"]>();
     const trace: TraceEvent[] = [];
@@ -91,6 +102,8 @@ describe("FAQ workflow", () => {
   });
 
   it.each([
+    "Who is the CEO of Bookly?",
+    "What is 2+2?",
     "Do you offer membership in Canada?",
     "What does citizenship in Canada mean?",
     "Do you have a rewards membership with delivery perks?",

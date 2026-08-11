@@ -1,3 +1,6 @@
+// Responsibility: Verify the reviewer-facing HTTP contract, static assets, validation, chat, and reset behavior.
+// Boundary: Runs the app in process with deterministic mocks; it does not bind a public port or call OpenAI.
+
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { BooklyAgent } from "../src/agent/bookly-agent.js";
@@ -20,7 +23,9 @@ describe("Bookly HTTP API", () => {
     expect(response.status).toBe(200);
     expect(response.type).toMatch(/html/);
     expect(response.text).toContain("Bookly");
-    expect(response.text).toContain("How long does shipping to Canada take?");
+    expect(response.text).toContain("How long does shipping take?");
+    expect(response.text).toMatch(/id="send-button"[^>]*disabled/);
+    expect(response.text).toMatch(/id="trace-content"[\s\S]*?tabindex="0"/);
   });
 
   it("ships the demo-only support handoff control", async () => {

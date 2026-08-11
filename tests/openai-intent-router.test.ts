@@ -1,3 +1,6 @@
+// Responsibility: Verify the OpenAI routing adapter's structured request, validation, and normalization behavior.
+// Boundary: The Responses client is mocked; no network call, workflow, session, or tool side effect is exercised.
+
 import { ZodError } from "zod";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -207,6 +210,7 @@ describe("OpenAIIntentRouter", () => {
     await expect(router.route(ROUTER_INPUT)).rejects.toBe(providerError);
   });
 
+  // Model-extracted write inputs remain untrusted until exact customer text supports them.
   it("drops identity slots that were not literally supplied by the customer", async () => {
     const client: IntentResponsesParseClient = {
       responses: {

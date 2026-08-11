@@ -1,3 +1,7 @@
+/**
+ * Responsibility: Implements deterministic Bookly tools over fixtures for the demo.
+ * Boundary: All writes are in-memory simulations; no customer or carrier system is contacted.
+ */
 import { ZodError } from "zod";
 import { findBooklyOrder } from "../data/bookly-fixtures.js";
 import type { Order } from "../domain/order.js";
@@ -84,6 +88,8 @@ export class MockBooklyTools implements BooklyTools {
       );
     }
 
+    // Policy is computed inside the tool so a router or model cannot declare an
+    // order eligible merely by selecting the return workflow.
     return ReturnEligibilitySchema.parse(evaluateEligibility(order, this.now));
   }
 
@@ -100,6 +106,8 @@ export class MockBooklyTools implements BooklyTools {
       );
     }
 
+    // The schema repeats the literal-true requirement after the readable runtime
+    // check above. Both guards must survive when this mock becomes a real adapter.
     const parsed = parseToolInput(CreateReturnInputSchema, input);
     const order = findBooklyOrder(parsed.orderId);
 
@@ -117,6 +125,8 @@ export class MockBooklyTools implements BooklyTools {
       );
     }
 
+    // Idempotency is enforced at the write boundary because retries and stale
+    // sessions can reach this method even when orchestration is correct.
     if (this.returnsByOrderId.has(order.id)) {
       throw new BooklyToolError(
         "return_already_exists",

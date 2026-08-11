@@ -1,3 +1,6 @@
+// Responsibility: Verify the deterministic operational boundary for lookup, eligibility, and return creation.
+// Boundary: Covers fixture-backed tool invariants, not agent routing or any real bookstore integration.
+
 import { describe, expect, it } from "vitest";
 import type { CreateReturnInput } from "../src/tools/contracts.js";
 import { MockBooklyTools } from "../src/tools/mock-bookly-tools.js";
@@ -10,6 +13,7 @@ const validReturn = {
 } satisfies CreateReturnInput;
 
 describe("MockBooklyTools command boundary", () => {
+  // Defense in depth keeps an orchestration bug from becoming an unconfirmed write.
   it("rejects a return without explicit confirmation", async () => {
     const tools = new MockBooklyTools();
     const unconfirmed = { ...validReturn, confirmed: false } as unknown as CreateReturnInput;

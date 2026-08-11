@@ -1,3 +1,6 @@
+// Responsibility: Orchestrate one Bookly support turn across routing, memory, and workflows.
+// Boundary: This layer coordinates policy decisions but never implements tool behavior itself.
+
 import {
   AgentReplySchema,
   type AgentReply,
@@ -85,8 +88,12 @@ export class BooklyAgent {
 
     const suppliedEmails = extractEmailAddresses(message);
     const suppliedOrderIds = extractOrderIds(message);
-    clearCompletedReturnForCustomerChange(session, suppliedEmails, trace);
-    clearCompletedReturnForOrderChange(session, suppliedOrderIds, trace);
+    clearCompletedReturnForContextChange(
+      session,
+      suppliedEmails,
+      suppliedOrderIds,
+      trace,
+    );
     invalidatePendingReturnForExplicitChange(
       session,
       message,
@@ -346,13 +353,9 @@ function applyDecision(
       ? session.intent
       : decision.intent;
 
-  clearCompletedReturnForCustomerChange(
+  clearCompletedReturnForContextChange(
     session,
     decision.slots.email ? [decision.slots.email] : [],
-    trace,
-  );
-  clearCompletedReturnForOrderChange(
-    session,
     decision.slots.orderId ? [decision.slots.orderId] : [],
     trace,
   );
@@ -361,10 +364,9 @@ function applyDecision(
 
   if (decision.contextAction === "start_fresh") {
     const retainedEmail = decision.slots.email ?? previousSlots.email;
-    session.slots = retainedEmail ? { email: retainedEmail } : {};
-    session.pendingReturn = undefined;
-    session.completedReturn = undefined;
-    session.phase = "collecting";
+    transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+      clearCompletedReturn: true,
+    });
     contextActionApplied = true;
     trace.push({
       category: "memory",
@@ -388,10 +390,10 @@ function applyDecision(
         decision.slots.email === previousSlots.email);
 
     if (canReuseVerifiedOrder) {
-      session.slots = {
-        orderId: previousSlots.orderId,
-        email: previousSlots.email,
-      };
+      transitionToCollectingWithRetainedEmail(session, previousSlots.email, {
+        clearCompletedReturn: true,
+      });
+      session.slots.orderId = previousSlots.orderId;
       trace.push({
         category: "memory",
         name: "context_carried_forward",
@@ -403,7 +405,9 @@ function applyDecision(
       // A model-supplied context hint is not authority to reuse state. If the
       // prior lookup was not completed and identity-matched, collect afresh.
       const retainedEmail = decision.slots.email ?? previousSlots.email;
-      session.slots = retainedEmail ? { email: retainedEmail } : {};
+      transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+        clearCompletedReturn: true,
+      });
       trace.push({
         category: "guardrail",
         name: "context_reuse",
@@ -412,9 +416,6 @@ function applyDecision(
           "Declined to reuse an order because no matching completed lookup established it.",
       });
     }
-    session.pendingReturn = undefined;
-    session.completedReturn = undefined;
-    session.phase = "collecting";
     contextActionApplied = true;
   }
 
@@ -428,10 +429,9 @@ function applyDecision(
     routedIntent === "return_request";
   if (completedReturnRestarted) {
     const retainedEmail = decision.slots.email ?? previousSlots.email;
-    session.slots = retainedEmail ? { email: retainedEmail } : {};
-    session.pendingReturn = undefined;
-    session.completedReturn = undefined;
-    session.phase = "collecting";
+    transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+      clearCompletedReturn: true,
+    });
     trace.push({
       category: "memory",
       name: "workflow_restart",
@@ -448,9 +448,9 @@ function applyDecision(
     routedIntent === "unknown";
   if (completedWorkflowClosed) {
     const retainedEmail = session.slots.email;
-    session.slots = retainedEmail ? { email: retainedEmail } : {};
-    session.pendingReturn = undefined;
-    session.phase = "collecting";
+    transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+      clearCompletedReturn: false,
+    });
     trace.push({
       category: "memory",
       name: "workflow_closed",
@@ -467,9 +467,9 @@ function applyDecision(
 
   if (intentChanged) {
     const retainedEmail = decision.slots.email ?? session.slots.email;
-    session.slots = retainedEmail ? { email: retainedEmail } : {};
-    session.pendingReturn = undefined;
-    session.phase = "collecting";
+    transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+      clearCompletedReturn: false,
+    });
     trace.push({
       category: "memory",
       name: "workflow_switch",
@@ -541,9 +541,9 @@ function explainCollectingConfirmation(
   if (!confirmation) {
     const retainedEmail = session.slots.email;
     session.intent = "unknown";
-    session.phase = "collecting";
-    session.slots = retainedEmail ? { email: retainedEmail } : {};
-    session.pendingReturn = undefined;
+    transitionToCollectingWithRetainedEmail(session, retainedEmail, {
+      clearCompletedReturn: false,
+    });
     trace.push({
       category: "guardrail",
       name: "workflow_cancelled",
@@ -591,55 +591,50 @@ function explainCollectingConfirmation(
   return { message, status: "needs_input" };
 }
 
-function clearCompletedReturnForCustomerChange(
+function clearCompletedReturnForContextChange(
   session: SessionState,
   suppliedEmails: readonly string[],
-  trace: TraceEvent[],
-): void {
-  if (
-    !session.completedReturn ||
-    suppliedEmails.length === 0 ||
-    suppliedEmails.every((email) => email === session.slots.email)
-  ) {
-    return;
-  }
-
-  // A completed receipt belongs to the customer context in which it was
-  // created. This runs before provider-independent shortcuts as well as after
-  // routing, so a same-message email switch cannot reveal the prior receipt.
-  session.completedReturn = undefined;
-  trace.push({
-    category: "memory",
-    name: "customer_context_changed",
-    status: "succeeded",
-    detail:
-      "Cleared the completed return reference after the customer email changed.",
-  });
-}
-
-function clearCompletedReturnForOrderChange(
-  session: SessionState,
   suppliedOrderIds: readonly string[],
   trace: TraceEvent[],
 ): void {
-  if (
-    !session.completedReturn ||
-    suppliedOrderIds.length === 0 ||
-    suppliedOrderIds.every(
-      (orderId) => orderId === session.completedReturn?.orderId,
-    )
-  ) {
-    return;
-  }
+  const completedReturn = session.completedReturn;
+  if (!completedReturn) return;
 
+  const customerChanged = suppliedEmails.some(
+    (email) => email !== session.slots.email,
+  );
+  const orderChanged = suppliedOrderIds.some(
+    (orderId) => orderId !== completedReturn.orderId,
+  );
+  if (!customerChanged && !orderChanged) return;
+
+  // A receipt belongs to both the verified customer and order context. Check
+  // customer identity first so a message changing both fields produces the
+  // same privacy-focused trace as the former ordered helper calls.
   session.completedReturn = undefined;
   trace.push({
     category: "memory",
-    name: "order_context_changed",
+    name: customerChanged
+      ? "customer_context_changed"
+      : "order_context_changed",
     status: "succeeded",
-    detail:
-      "Cleared the completed return reference after the order context changed.",
+    detail: customerChanged
+      ? "Cleared the completed return reference after the customer email changed."
+      : "Cleared the completed return reference after the order context changed.",
   });
+}
+
+function transitionToCollectingWithRetainedEmail(
+  session: SessionState,
+  retainedEmail: string | undefined,
+  options: { clearCompletedReturn: boolean },
+): void {
+  session.slots = retainedEmail ? { email: retainedEmail } : {};
+  session.pendingReturn = undefined;
+  if (options.clearCompletedReturn) {
+    session.completedReturn = undefined;
+  }
+  session.phase = "collecting";
 }
 
 function invalidatePendingReturnForExplicitChange(

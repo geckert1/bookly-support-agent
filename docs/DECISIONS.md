@@ -27,7 +27,7 @@ The assistant can interpret a customer's language and write a read-only FAQ resp
 
 ### 1. Separate interpretation from execution
 
-AI identifies intent and extracts details from natural language. The router also returns an explicit `contextAction`: continue the current context, start fresh, or request reuse of a verified order. Typed application code validates that transition, retrieves the order, evaluates return policy, interprets final confirmation through a normalized phrase allowlist, and constructs every operational commitment.
+AI identifies intent and extracts details from natural language. The router also returns an explicit `contextAction`: continue the current context, start fresh, or request reuse of a verified order. Typed application code validates that transition, retrieves the order, evaluates return policy, interprets final confirmation through a small structural grammar, and constructs every operational commitment.
 
 **Tradeoff:** This is less flexible than letting a model answer end to end, but it prevents invented statuses, dates, and return promises. The model can interpret a reference such as `return it`, while code permits reuse only after a completed verified lookup with no conflicting order or email.
 

@@ -1,3 +1,6 @@
+// Responsibility: Define the validated order record consumed by Bookly tools and workflows.
+// Boundary: The schema models order data but contains no lookup or fulfillment behavior.
+
 import { z } from "zod";
 
 export const OrderStatusSchema = z.enum([
