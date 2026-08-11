@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+.env
+coverage/
+dist/
+tmp/
+output/*.inspect.ndjson
+qa/
+.DS_Store
+.claude/
+*.log

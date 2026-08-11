@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#153f2d" />
+    <meta
+      name="description"
+      content="Bookly is an online bookstore support agent for order status, returns, and approved shipping and policy FAQs."
+    />
+    <title>Bookly — Online bookstore support</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#composer-input">Skip to message composer</a>
+
+    <div class="page-shell">
+      <header class="topbar" aria-label="Bookly application header">
+        <a class="brand" href="/" aria-label="Bookly home">
+          <span class="brand-mark" aria-hidden="true">
+            <span>B</span>
+            <i></i>
+          </span>
+          <span class="brand-copy">
+            <strong>Bookly</strong>
+            <small>Online bookstore support</small>
+          </span>
+        </a>
+
+        <div class="topbar-actions">
+          <div
+            id="mode-badge"
+            class="mode-badge mode-badge--checking"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="mode-dot" aria-hidden="true"></span>
+            <span id="mode-label">Checking connection</span>
+          </div>
+          <button id="reset-button" class="reset-button" type="button" aria-label="Reset conversation">
+            <span aria-hidden="true">↻</span>
+            <span>Reset</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace" aria-label="Bookly chat workspace">
+        <section class="chat-panel" aria-labelledby="chat-heading">
+          <div class="chat-heading-row">
+            <div>
+              <p class="eyebrow">Orders, returns &amp; FAQs</p>
+              <h1 id="chat-heading">How can we help with your books?</h1>
+            </div>
+            <span class="availability-pill">
+              <span aria-hidden="true"></span>
+              Ready to help
+            </span>
+          </div>
+
+          <div
+            id="conversation"
+            class="conversation"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-label="Conversation with Bookly"
+            tabindex="0"
+          ></div>
+
+          <section id="starter-prompts" class="starter-prompts" aria-labelledby="starter-heading">
+            <p id="starter-heading">Try asking</p>
+            <div class="prompt-list">
+              <button
+                type="button"
+                class="prompt-chip"
+                data-prompt="Where is order BK-10421? My email is maya.chen@example.com."
+              >
+                <span aria-hidden="true">⌁</span>
+                Where is order BK-10421? My email is maya.chen@example.com.
+              </button>
+              <button
+                type="button"
+                class="prompt-chip"
+                data-prompt="I need to return order BK-10422 because it did not fit. My email is maya.chen@example.com."
+              >
+                <span aria-hidden="true">↩</span>
+                I need to return order BK-10422 because it did not fit. My email is maya.chen@example.com.
+              </button>
+              <button
+                type="button"
+                class="prompt-chip"
+                data-prompt="Can I return order BK-10423? My email is maya.chen@example.com."
+              >
+                <span aria-hidden="true">?</span>
+                Can I return order BK-10423? My email is maya.chen@example.com.
+              </button>
+              <button
+                type="button"
+                class="prompt-chip"
+                data-prompt="How long does shipping to Canada take?"
+              >
+                <span aria-hidden="true">i</span>
+                How long does shipping to Canada take?
+              </button>
+            </div>
+          </section>
+
+          <div class="composer-wrap">
+            <form id="composer-form" class="composer" novalidate>
+              <label class="sr-only" for="composer-input">Message Bookly</label>
+              <textarea
+                id="composer-input"
+                name="message"
+                rows="1"
+                maxlength="2000"
+                placeholder="Ask about an order, return, or Bookly policy…"
+                aria-describedby="composer-help composer-status"
+                required
+              ></textarea>
+              <button id="send-button" class="send-button" type="submit" aria-label="Send message">
+                <span class="send-label">Send</span>
+                <span class="send-arrow" aria-hidden="true">↑</span>
+              </button>
+            </form>
+            <div class="composer-meta">
+              <span id="composer-help">Press Enter to send · Shift + Enter for a new line</span>
+              <span id="composer-status" role="status" aria-live="polite">Ready</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="trace-panel" aria-labelledby="trace-heading">
+          <div class="trace-header">
+            <div>
+              <p class="trace-eyebrow">Live activity</p>
+              <h2 id="trace-heading">Operational trace</h2>
+            </div>
+            <span class="trace-live" aria-label="Trace updates live">
+              <span aria-hidden="true"></span>
+              Live
+            </span>
+          </div>
+
+          <p class="trace-description">
+            A safe view of routing, tools, and guardrails. Private model reasoning is never displayed.
+          </p>
+
+          <div id="trace-content" class="trace-content" aria-live="polite">
+            <div id="trace-empty" class="trace-empty">
+              <span class="trace-empty-mark" aria-hidden="true">⌁</span>
+              <h3>No activity yet</h3>
+              <p>Operational steps will appear here after your first message.</p>
+            </div>
+            <ol id="trace-list" class="trace-list" aria-label="Operational events"></ol>
+          </div>
+
+          <div class="trace-privacy">
+            <span aria-hidden="true">✓</span>
+            <p><strong>Safe by design</strong><br />Only approved operational metadata is shown.</p>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <noscript>
+      <p class="noscript-message">Bookly needs JavaScript enabled to start a conversation.</p>
+    </noscript>
+  </body>
+</html>
