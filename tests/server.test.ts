@@ -5,7 +5,7 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { BooklyAgent } from "../src/agent/bookly-agent.js";
 import { DeterministicIntentRouter } from "../src/agent/deterministic-intent-router.js";
-import { createApp } from "../src/server.js";
+import deployedApp, { createApp } from "../src/server.js";
 import { MockBooklyTools } from "../src/tools/mock-bookly-tools.js";
 
 function createTestApp() {
@@ -17,6 +17,10 @@ function createTestApp() {
 }
 
 describe("Bookly HTTP API", () => {
+  it("exports an Express app for the Vercel function entry point", () => {
+    expect(typeof deployedApp).toBe("function");
+  });
+
   it("serves the reviewer-facing chat UI", async () => {
     const response = await request(createTestApp()).get("/");
 

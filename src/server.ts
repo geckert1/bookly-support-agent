@@ -24,7 +24,7 @@ import { OpenAIIntentRouter } from "./providers/openai-intent-router.js";
 import { OpenAIKnowledgeAnswerer } from "./providers/openai-knowledge-answerer.js";
 import { createMockBooklyTools } from "./tools/index.js";
 
-const publicDirectory = fileURLToPath(new URL("./public", import.meta.url));
+const publicDirectory = fileURLToPath(new URL("../public", import.meta.url));
 
 const chatRequestSchema = z.object({
   sessionId: z.string().trim().min(1).max(120),
@@ -169,8 +169,14 @@ function createConfiguredAgent(): BooklyAgent {
   );
 }
 
-if (process.env.NODE_ENV !== "test") {
-  createApp().listen(config.port, () => {
+// Vercel discovers this module as the Express entry point and requires the app
+// itself as the default export. Local development uses the same instance but
+// owns the port listener; Vercel owns its serverless listener.
+const app = createApp();
+export default app;
+
+if (process.env.NODE_ENV !== "test" && process.env.VERCEL !== "1") {
+  app.listen(config.port, () => {
     console.log(
       `Bookly is running at http://localhost:${config.port} in ${config.mode} mode.`,
     );
